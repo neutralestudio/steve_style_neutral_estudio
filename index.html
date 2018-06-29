@@ -1,0 +1,50 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>STEVE</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/5.10.6/alt/video-js-cdn.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/5.10.6/video.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/3.1.0/videojs-contrib-hls.js"></script>
+<script type="text/javascript" src="http://s.ideosoft.net/stbapi/stb.js"></script>
+<style>
+body {
+  background-color: #000;
+  text-align: center;
+}
+
+iframe {
+  margin: 20px auto;
+  width: 1280px;
+  height: 720px;
+}
+
+</style>
+</head>
+<body>
+
+<iframe src="main_menu.html" id="stbWebView" frameborder="0"></iframe>
+<div id="control">
+<button href="main_menu.html" onclick="stbWebView.src='main_menu.html'; return false;">Main Menu</button>
+<button href="channel_list.html"     onclick="stbWebView.src='channel_list.html'; return false;">Channel List</button>
+<button href="loading.html"     onclick="stbWebView.src='loading.html'; return false;">Loading</button>
+<button href="osd1.html"     onclick="stbWebView.src='osd1.html'; return false;">OSD1</button>
+
+
+<div>
+
+</menu>
+<script>
+var stbWebView = document.getElementById('stbWebView')
+s = stbWebView.contentWindow.document.createElement('script');
+s.type = "text/javascript";
+s.innerText = 'window.screen = { width: 1280, height: 720, availWidth: 1280, availHeight: 720, innerWidth: 1280, innerHeight: 720, colorDepth:"32", pixelDepth:"32" }';
+stbWebView.contentWindow.document.head.appendChild(s);
+
+
+
+
+</script>
+</body>
+</html>
