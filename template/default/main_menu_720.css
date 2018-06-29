@@ -1,0 +1,180 @@
+/* MAIN MENU */
+.main_menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 720px;
+    background-image: url("i_720/bg.png");
+}
+
+.main_menu_logo {
+    position: absolute;
+    left: 20px;
+    top: 10px;
+    width: 200px;
+    height: 100px;
+}
+
+.main_menu_date {
+    font-family: "Bariol", serif;
+    font-weight: bold;
+    font-size: 22px;
+    color: #2a5a5a;
+}
+
+.main_menu_time {
+    font-weight: bold;
+    font-size: 34px;
+    color: #2a5a5a;
+    margin-left: 12px;
+    /*margin-right: 65px;*/
+    font-family: "Bariol", sans-serif;
+}
+
+.main_menu_date_bar {
+    position: absolute;
+    width: 600px;
+    bottom: 38px;
+    right: 0;
+    font-family: "Bariol", sans-serif;
+    text-align: right;
+    padding-right: 65px;
+}
+
+.mm_menu_hor {
+    position: absolute;
+    width: 1140px;
+    height: 105px;
+    /* bottom: 60px; */
+    padding: 0 70px 0 70px;
+    background-color: #00a9aaad;
+}
+
+.mm_hor_left {
+    position: absolute;
+    width: 110px;
+    height: 141px;
+    top: -38px;
+    left: -66px;
+    background: url(i_720/mm_hor_left.png);
+}
+
+.mm_hor_right {
+    position: absolute;
+    width: 100px;
+    height: 105px;
+    right: 39px;
+    background: url(i_720/mm_hor_right.png);
+}
+
+.menu_hor_cell {
+    float: left;
+    width: 360px;
+    height: 100px;
+    font: 27px "Bariol";
+    font-weight: bold;
+    color: #2a5a5a;
+    /* text-transform: uppercase; */
+    text-align: left;
+}
+
+.menu_hor_cell span {
+    line-height: 103px;
+}
+
+.menu_hor_cell_act span {
+    line-height: 102px;
+}
+
+.menu_hor_cell_act {
+    float: left;
+    width: 360px;
+    height: 105px;
+    font: 30px "Bariol";
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    text-align: left;
+    background-color: #2a5a5a85;
+    margin: 0 15px;
+    padding: 0 15px;
+}
+
+.menu_hor_cell_img {
+    width: 100px;
+    height: 100px;
+    float:  left;
+}
+
+.mm_menu_vert_empty {
+    position: absolute;
+    background: url(i_720/mm_hor_bg2.png) no-repeat;
+    width: 390px;
+    height: 15px;
+    bottom: 270px;
+    left: 445px;
+}
+
+.mm_menu_vert {
+    position: absolute;
+    width: 390px;
+    top: 105px;
+    left: 445px;
+}
+
+.mm_menu_vert_bottom {
+    height: 17px;
+    width: 390px;
+    background-color: #2a5a5a85;
+    border-radius: 0px 0px 25px 25px;
+    -moz-border-radius: 0px 0px 25px 25px;
+    -webkit-border-radius: 0px 0px 25px 25px;
+}
+
+.mm_menu_vert_body {
+    width: 390px;
+    background-color: #2a5a5a85;
+    padding-top: 33px;
+}
+
+.mm_menu_vert_body .mm_vert_container div {
+    height: 38px;
+    width: 356px;
+    font: 30px "Bariol";
+    color: #ffffff;
+    text-transform: uppercase;
+    /* background: url(i_720/mm_vert_cell.png) bottom left; */
+    /*margin-left: 14px;*/
+    /*padding-left: 14px;
+    padding-top: 8px;*/
+    padding: 4px 0 5px 29px;
+    overflow: hidden;
+    white-space: pre;
+    text-overflow: ellipsis;
+}
+
+.mm_menu_vert_body .mm_vert_container .active {
+    color: #fff;
+    background-color: #2a5a5a;
+    /* background-position: 0 -2px; */
+    padding-top: 11px;
+    height: 36px;
+    font-weight: bold;
+    font-family: "Bariol", sans-serif;
+    border-radius: 25px;
+    -moz-border-radius: 25px;
+    -webkit-border-radius: 25px;
+    width:  345px;
+    margin-left: 7px;
+}
+
+.main_menu_ver {
+    position: absolute;
+    right: 70px;
+    bottom: 30px;
+    font-size: 22px !important;
+    color: #2a5a5a !important;
+}
+
+/* END MAIN MENU */

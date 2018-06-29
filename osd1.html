@@ -1,0 +1,76 @@
+<html><head>
+<title>stalker_portal</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<script type="text/javascript" src="version.js"></script>
+
+<script type="text/javascript" src="global.js"></script>
+
+<script type="text/javascript" src="JsHttpRequest.js"></script>
+
+<script type="text/javascript" src="keydown.keycodes.js"></script>
+<script type="text/javascript" src="keydown.observer.js"></script>
+
+<script type="text/javascript" src="watchdog.js"></script>
+<script type="text/javascript" src="usbdisk.js"></script>
+
+<script type="text/javascript" src="load_bar.js"></script>
+<script type="text/javascript" src="xpcom.common.js"></script>
+<script type="text/javascript" src="xpcom.webkit.js"></script>
+
+<script type="text/javascript" src="blocking.js"></script>
+
+<script type="text/javascript" src="player.js"></script>
+
+<link type="text/css" rel="stylesheet" href="template/default/load_bar_720.css"><link type="text/css" rel="stylesheet" href="template/default/reset_720.css"><script type="text/javascript" src="reset.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.modal_form_720.css"><script type="text/javascript" src="layer.modal_form.js"></script><link type="text/css" rel="stylesheet" href="template/default/blocking_720.css"><link type="text/css" rel="stylesheet" href="template/default/load_bar_720.css"><link type="text/css" rel="stylesheet" href="template/default/blocking_720.css"><link type="text/css" rel="stylesheet" href="template/default/reset_720.css"><script type="text/javascript" src="reset.js"></script><link type="text/css" rel="stylesheet" href="template/default/context_menu_720.css"><script type="text/javascript" src="context_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/main_menu_720.css"><script type="text/javascript" src="main_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/alert_720.css"><script type="text/javascript" src="alert.js"></script><link type="text/css" rel="stylesheet" href="template/default/speedtest_720.css"><script type="text/javascript" src="speedtest.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.base_720.css"><script type="text/javascript" src="layer.base.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.list_720.css"><script type="text/javascript" src="layer.list.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.setting_720.css"><script type="text/javascript" src="layer.setting.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.simple_720.css"><script type="text/javascript" src="layer.simple.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.input_720.css"><script type="text/javascript" src="layer.input.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.sidebar_720.css"><script type="text/javascript" src="layer.sidebar.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.search_box_720.css"><script type="text/javascript" src="layer.search_box.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.bottom_menu_720.css"><script type="text/javascript" src="layer.bottom_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.scrollbar_720.css"><script type="text/javascript" src="layer.scrollbar.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.vclub_info_720.css"><script type="text/javascript" src="layer.vclub_info.js"></script><link type="text/css" rel="stylesheet" href="template/default/image.viewer_720.css"><script type="text/javascript" src="image.viewer.js"></script><link type="text/css" rel="stylesheet" href="template/default/password_input_720.css"><script type="text/javascript" src="password_input.js"></script><link type="text/css" rel="stylesheet" href="template/default/series_switch_720.css"><script type="text/javascript" src="series_switch.js"></script><link type="text/css" rel="stylesheet" href="template/default/duration_input_720.css"><script type="text/javascript" src="duration_input.js"></script><link type="text/css" rel="stylesheet" href="template/default/media_browser_720.css"><script type="text/javascript" src="media_browser.js"></script><link type="text/css" rel="stylesheet" href="template/default/tv_720.css"><script type="text/javascript" src="tv.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.reminder_720.css"><script type="text/javascript" src="epg.reminder.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.recorder_720.css"><script type="text/javascript" src="epg.recorder.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg_720.css"><script type="text/javascript" src="epg.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.simple_720.css"><script type="text/javascript" src="epg.simple.js"></script><link type="text/css" rel="stylesheet" href="template/default/youtube_720.css"><script type="text/javascript" src="youtube.js"></script><link type="text/css" rel="stylesheet" href="template/default/weather.current_720.css"><script type="text/javascript" src="weather.current.js"></script><link type="text/css" rel="stylesheet" href="template/default/remotepvr_720.css"><script type="text/javascript" src="remotepvr.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.parent_720.css"><script type="text/javascript" src="settings.parent.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.localization_720.css"><script type="text/javascript" src="settings.localization.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.playback_720.css"><script type="text/javascript" src="settings.playback.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.common_720.css"><script type="text/javascript" src="settings.common.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.network_status_720.css"><script type="text/javascript" src="settings.network_status.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings_720.css"><script type="text/javascript" src="settings.js"></script><link type="text/css" rel="stylesheet" href="template/default/weather.day_720.css"><script type="text/javascript" src="weather.day.js"></script><link type="text/css" rel="stylesheet" href="template/default/internet_720.css"><script type="text/javascript" src="internet.js"></script></head>
+<body style="background-color: black">
+
+<div class="connection_problem_container" style=""><div class="connection_problem_block">Problema de conexión</div></div>
+
+<div class="mb_info" style="">
+   <div class="alert_outer">
+      <div class="info_container">
+         <table>
+            <tr>
+               <td class="mb_info_lt_head"></td>
+               <td class="mb_info_top_head"></td>
+               <td class="mb_info_rt_head"></td>
+            </tr>
+            <tr>
+               <td class="mb_info_lb"></td>
+               <td class="mb_info_main">
+                  <div class="ico_info"></div>
+                  <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat.</span>
+               </td>
+               <td class="mb_info_rb"></td>
+            </tr>
+         </table>
+      </div>
+   </div>
+</div>
+
+<div class="mb_info" style="">
+   <div class="alert_outer">
+      <div class="confirm_container">
+         <table>
+            <tr>
+               <td class="mb_info_lt_head"></td>
+               <td class="mb_info_top_head"></td>
+               <td class="mb_info_rt_head"></td>
+            </tr>
+            <tr>
+               <td class="mb_info_lb"></td>
+               <td class="mb_info_main">
+                  <div class="ico_confirm"></div>
+                  <span>Esto es un mensaje de informacion</span>
+               </td>
+               <td class="mb_info_rb"></td>
+            </tr>
+         </table>
+      </div>
+   </div>
+</div>
+
+</body>
+</html>

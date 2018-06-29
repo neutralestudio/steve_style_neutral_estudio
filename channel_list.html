@@ -1,0 +1,332 @@
+<html><head>
+<title>stalker_portal</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<script type="text/javascript" src="version.js"></script>
+
+<script type="text/javascript" src="global.js"></script>
+
+<script type="text/javascript" src="JsHttpRequest.js"></script>
+
+<script type="text/javascript" src="keydown.keycodes.js"></script>
+<script type="text/javascript" src="keydown.observer.js"></script>
+
+<script type="text/javascript" src="watchdog.js"></script>
+<script type="text/javascript" src="usbdisk.js"></script>
+
+<script type="text/javascript" src="load_bar.js"></script>
+<script type="text/javascript" src="xpcom.common.js"></script>
+<script type="text/javascript" src="xpcom.webkit.js"></script>
+
+<script type="text/javascript" src="blocking.js"></script>
+
+<script type="text/javascript" src="player.js"></script>
+
+<!--debug-->
+<!--<script type="text/javascript" src="http://192.168.1.71:8000/target/target-script-min.js#azhurb"></script>-->
+
+<script type="text/javascript">
+
+var debug = 0;
+var stb;
+var _GET = {};
+//var gmode = '';
+var resolution_prefix = '';
+
+var module = module || {};
+var word = {};
+var windowId;
+
+window.onerror = function(msg, url, lno){
+    _debug('line: '+lno+'; msg: "'+msg+'" url: '+url);
+    return true;
+};
+
+get_params();
+
+if (_GET.hasOwnProperty('debug')){
+    debug = 1;
+}
+
+if (_GET.hasOwnProperty('referrer')){
+    var referrer = decodeURIComponent(_GET['referrer']);
+}else{
+    referrer = '';
+}
+
+if (_GET.hasOwnProperty('single_module')){
+    var single_module = _GET['single_module'].split(',');
+}else{
+    single_module = [];
+}
+
+var focus_module;
+if (_GET && _GET.hasOwnProperty('focus_module')){
+    focus_module = _GET['focus_module'];
+}
+
+window.onload = init;
+
+var loader = {
+
+    chain : [],
+    cur_idx : -1,
+    head : document.getElementsByTagName("head")[0],
+    max_load_percent : 50,
+    step : 0,
+    template : 'default',
+
+    set_template : function(template){
+        _debug('loader.set_template', template);
+        this.template = template;
+    },
+
+    add : function(modules){
+        _debug('loader.add');
+
+        modules = modules || [];
+
+        this.cur_idx = -1;
+
+        for (var i=0; i<modules.length; i++){
+            if (this.chain.indexOf(modules[i]) >= 0){
+                modules.splice(i, 1);
+            }
+        }
+
+        this.chain = modules;
+
+        this.step = Math.ceil(this.max_load_percent/this.chain.length);
+
+        this.next();
+    },
+
+    next : function(){
+        _debug('loader.next');
+
+        if (this.cur_idx < this.chain.length-1){
+            this.cur_idx++;
+            this.append(this.chain[this.cur_idx]);
+        }
+    },
+
+    append : function(module){
+        _debug('loader.append');
+
+        stb.loader.add_pos(this.step, 'append '+module);
+
+        this.append_style(module);
+
+        this.append_javascript(module);
+    },
+
+    append_style : function(module){
+        _debug('loader.append_style', module);
+
+        if (module.indexOf('external_') === 0){
+            _debug('skip style loading', module);
+            return;
+        }
+
+        var _style = document.createElement('link');
+        _style.type = "text/css";
+        _style.rel = "stylesheet";
+
+        if (module.indexOf('supermodule') > 0){
+            _style.href = module + resolution_prefix +".css&single_module="+single_module.join(',');
+        }else{
+            _style.href = 'template/' + this.template + '/' + module + resolution_prefix +".css";
+        }
+
+        this.head.appendChild(_style);
+        _debug('append', _style.href);
+    },
+
+    append_javascript : function(module){
+        _debug('loader.append_javascript', module);
+
+        var _script = document.createElement('script');
+        _script.type = "text/javascript";
+        if (module.indexOf('supermodule') > 0){
+            _script.src  = module + ".js&single_module="+single_module.join(',');
+        }else{
+            if (module.indexOf('external_') === 0){
+
+                /*var idx = stb.all_modules.indexOf(module);
+
+                if (idx !== -1){
+                    stb.all_modules[idx] = module.replace('external_','');
+                }*/
+
+                _script.src  = '../server/api/ext_module.php?name='+module.replace('external_', '')+'&mac='+stb.mac;
+            }else{
+                _script.src  = module + ".js";
+            }
+        }
+        this.head.appendChild(_script);
+        _debug('append', _script.src);
+    }
+};
+
+/**
+ * Init STB.
+ */
+function init(){
+    _debug('init');
+
+    if (typeof(gSTB) == 'undefined'){
+        if (window.innerWidth > 720){
+            resolution_prefix = '_720';
+        }else if (window.innerHeight < 576){
+            resolution_prefix = '_480';
+        }else{
+            resolution_prefix = '';
+        }
+    }else{
+        stb.check_graphic_res();
+    }
+
+    if (typeof(stbWebWindow) != 'undefined'){
+        windowId = stbWebWindow.windowId();
+    }
+
+    _debug('windowId', windowId);
+
+    if (_GET && _GET.hasOwnProperty('access_token')){
+        stb.access_token = _GET['access_token'];
+    }
+
+    _debug('_GET', _GET);
+
+    /*if (typeof(gSTB) != 'undefined'){
+        if (gSTB.RDir('gmode') != 720){
+            gmode = '720';
+        }
+    }else{
+        if (window.innerWidth > 720){
+            gmode = '720';
+        }
+    }
+
+    if (gmode){
+        img_prefix = '_'+gmode;
+    }
+
+    window.moveTo(0, 0);
+
+    if (gmode == '720'){
+        window.resizeTo(1280, 720);
+    }else{
+        window.resizeTo(720, 576);
+    }*/
+
+    stb.loader = new load_bar();
+    stb.loader.bind();
+
+    stb.loader.set_callback(
+        function(){
+            stb.post_loading_handle();
+        }
+    );
+
+    stb.init();
+
+    (function(){
+
+        if (stb.player.on){
+
+            if (stb.player.con_menu.on){
+                stb.player.con_menu.hide();
+            }
+
+            if(single_module.length){
+                if (stb.player.on){
+                    stb.player.show_prev_layer();
+                }
+                return;
+            }
+
+            stb.player.prev_layer && stb.player.prev_layer.hide && stb.player.prev_layer.hide();
+
+            if (stb.player.on){
+                stb.player.stop();
+            }
+
+            main_menu.show();
+        }
+
+    }).bind(key.MENU);
+
+    (function(){
+
+        _debug('stb.cur_single_module', stb.cur_single_module);
+
+        if (single_module.length && (single_module.indexOf('tv') == -1 || stb.cur_single_module != 'tv')){
+            return;
+        }
+
+        if (!stb.player.channels || stb.player.channels.length == 0){
+            return;
+
+        }
+
+        stb.cur_layer && stb.cur_layer.hide && stb.cur_layer.hide();
+
+        if (module && module.tv){
+            stb.set_cur_place(module.tv.layer_name);
+            stb.set_cur_layer(module.tv);
+        }
+
+        if (!module.blocking.on){
+            stb.player.play_last();
+        }
+
+    }).bind(key.TV);
+
+    (function(){
+        if (module.radio && !module.radio.on){
+
+            keydown_observer.emulate_key(key.MENU);
+
+            main_menu.hide();
+            module.radio.show();
+            module.radio.cur_view = 'short';
+
+            module.radio.shift_row_callback = function(){
+                module.radio.play();
+                module.radio.shift_row_callback = null;
+                module.radio.cur_view = 'wide';
+            };
+        }
+    }).bind(key.AUDIO);
+
+    keydown_observer.addCustomEventListener("keypress", function(event){
+
+        if (stb.power_off && event.key != key.USB_MOUNTED && event.key != key.USB_UNMOUNTED){
+            stb.switchPower();
+            return false;
+        }
+
+        return true;
+    });
+
+    (function(){
+
+        stb.switchPower();
+
+    }).bind(key.POWER);
+
+    /* END LAYER MANAGEMENT */
+
+}
+
+</script>
+
+<link type="text/css" rel="stylesheet" href="template/default/load_bar_720.css"><link type="text/css" rel="stylesheet" href="template/default/reset_720.css"><script type="text/javascript" src="reset.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.modal_form_720.css"><script type="text/javascript" src="layer.modal_form.js"></script><link type="text/css" rel="stylesheet" href="template/default/blocking_720.css"><link type="text/css" rel="stylesheet" href="template/default/load_bar_720.css"><link type="text/css" rel="stylesheet" href="template/default/blocking_720.css"><link type="text/css" rel="stylesheet" href="template/default/reset_720.css"><script type="text/javascript" src="reset.js"></script><link type="text/css" rel="stylesheet" href="template/default/context_menu_720.css"><script type="text/javascript" src="context_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/main_menu_720.css"><script type="text/javascript" src="main_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/alert_720.css"><script type="text/javascript" src="alert.js"></script><link type="text/css" rel="stylesheet" href="template/default/speedtest_720.css"><script type="text/javascript" src="speedtest.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.base_720.css"><script type="text/javascript" src="layer.base.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.list_720.css"><script type="text/javascript" src="layer.list.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.setting_720.css"><script type="text/javascript" src="layer.setting.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.simple_720.css"><script type="text/javascript" src="layer.simple.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.input_720.css"><script type="text/javascript" src="layer.input.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.sidebar_720.css"><script type="text/javascript" src="layer.sidebar.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.search_box_720.css"><script type="text/javascript" src="layer.search_box.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.bottom_menu_720.css"><script type="text/javascript" src="layer.bottom_menu.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.scrollbar_720.css"><script type="text/javascript" src="layer.scrollbar.js"></script><link type="text/css" rel="stylesheet" href="template/default/layer.vclub_info_720.css"><script type="text/javascript" src="layer.vclub_info.js"></script><link type="text/css" rel="stylesheet" href="template/default/image.viewer_720.css"><script type="text/javascript" src="image.viewer.js"></script><link type="text/css" rel="stylesheet" href="template/default/password_input_720.css"><script type="text/javascript" src="password_input.js"></script><link type="text/css" rel="stylesheet" href="template/default/series_switch_720.css"><script type="text/javascript" src="series_switch.js"></script><link type="text/css" rel="stylesheet" href="template/default/duration_input_720.css"><script type="text/javascript" src="duration_input.js"></script><link type="text/css" rel="stylesheet" href="template/default/media_browser_720.css"><script type="text/javascript" src="media_browser.js"></script><link type="text/css" rel="stylesheet" href="template/default/tv_720.css"><script type="text/javascript" src="tv.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.reminder_720.css"><script type="text/javascript" src="epg.reminder.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.recorder_720.css"><script type="text/javascript" src="epg.recorder.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg_720.css"><script type="text/javascript" src="epg.js"></script><link type="text/css" rel="stylesheet" href="template/default/epg.simple_720.css"><script type="text/javascript" src="epg.simple.js"></script><link type="text/css" rel="stylesheet" href="template/default/youtube_720.css"><script type="text/javascript" src="youtube.js"></script><link type="text/css" rel="stylesheet" href="template/default/weather.current_720.css"><script type="text/javascript" src="weather.current.js"></script><link type="text/css" rel="stylesheet" href="template/default/remotepvr_720.css"><script type="text/javascript" src="remotepvr.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.parent_720.css"><script type="text/javascript" src="settings.parent.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.localization_720.css"><script type="text/javascript" src="settings.localization.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.playback_720.css"><script type="text/javascript" src="settings.playback.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.common_720.css"><script type="text/javascript" src="settings.common.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings.network_status_720.css"><script type="text/javascript" src="settings.network_status.js"></script><link type="text/css" rel="stylesheet" href="template/default/settings_720.css"><script type="text/javascript" src="settings.js"></script><link type="text/css" rel="stylesheet" href="template/default/weather.day_720.css"><script type="text/javascript" src="weather.day.js"></script><link type="text/css" rel="stylesheet" href="template/default/internet_720.css"><script type="text/javascript" src="internet.js"></script></head>
+<body>
+<!--<img src="i/loading_bg.gif" width="0" height="0"/>
+<img src="i/loading.png" width="0" height="0"/>-->
+
+
+<div class="osd_clock_block onVideoOff" style="display: none;"><div class="osd_clock"></div></div><div class="loader" style="display: none;"><div class="loader_bar_bg"><div class="loader_bar" style="width: 248px;"></div></div><div class="loader_log" style="display: none;">append reset<br>append layer.modal_form<br>call stb.user_init<br>append reset<br>append context_menu<br>fav_channels loaded<br>append main_menu<br>append alert<br>append speedtest<br>append layer.base<br>append layer.list<br>append layer.setting<br>append layer.simple<br>append layer.input<br>append layer.sidebar<br>append layer.search_box<br>append layer.bottom_menu<br>append layer.scrollbar<br>append layer.vclub_info<br>append image.viewer<br>append password_input<br>append series_switch<br>append duration_input<br>append media_browser<br>append tv<br>channels loaded<br>append epg.reminder<br>append epg.recorder<br>append epg<br>append epg.simple<br>append youtube<br>append weather.current<br>append remotepvr<br>append settings.parent<br>append settings.localization<br>append settings.playback<br>append settings.common<br>append settings.network_status<br>append settings<br>append weather.day<br>append internet<br></div></div><div class="pause" style="display: none;"></div><div class="rec_container" style="display: none;"><div class="rec_left"></div><div class="rec_main">0</div></div><div class="osd_info" style="display: none;"><div class="osd_info_clock" style="visibility: visible;">16:18</div><div class="osd_info_time_shift_mark" style="display: none;"></div><div class="osd_info_title">525. Crimen e investigacion (por internet)</div><div class="osd_info_logo"><img src="http://s.interlibre.net//stalker_portal/misc/logos/320/142.jpg"></div><div class="osd_info_epg" style="display: block;" descr="0">15:50 ¿Nacidos para matar? El gen del mal<br>16:48 Salvados por el miedo</div><div style="display: none;"><div class="pos_bar"><div class="pos_button" style="left: 0px;"></div></div><div class="pos_time"><div class="cur_pos_time" active="">00:00:00</div><div class="pos_time_separator">/</div><div class="total_pos_time">00:00:00</div></div><div class="pos_series"></div></div></div><div class="quick_ch_switch" style="display: none;"><div class="quick_ch_input"></div></div><div class="volume" style="display: none;"><div class="volume_bar"><div class="volume_progress" style="width: 195px;"></div></div><div class="volume_off" style="display: none;"></div></div><div class="time_shift_info_container" style="display: none;"><div class="time_shift_info_block">TIME SHIFT</div><div class="time_shift_info_block_right"></div></div><div class="playback_progress_block" style="display: none;"><div class="playback_progress"></div></div><div class="aspect_info_container" style="display: none;"><div class="aspect_block"></div><div class="aspect_block_right"></div></div><div class="cut_off" style="display: none;"><div class="cut_off_text"></div><div class="blocking_buttons"><div class="blocking_account_reboot"><div class="color_btn red"></div> blocking_account_reboot</div></div></div><div class="connection_problem_container" style="display: none;"><div class="connection_problem_block">Problema de conexión</div></div><div class="authentication_problem_container" style="display: none;"><div class="authentication_problem_block">Problema de autenticacion</div></div><div class="screensaver" style="display: none;"><div class="screensaver_clock"></div></div><div class="time_shift_info_container" style="display: none;"><div class="time_shift_info_block">COMERCIAL</div><div class="time_shift_info_block_right"></div></div><div class="ad_skip_container" style="display: none;"><div class="ad_skip_block"><div class="ad_skip_txt">OMITIR</div></div><div class="time_shift_info_block_right"></div></div><div class="main_menu" style="display: none;"><div class="main_menu_logo" style="background: url(&quot;http://s.interlibre.net/stalker_portal/c/template/logo.png&quot;) no-repeat;"></div><div class="main_menu_date_bar"><span class="main_menu_date"></span><span class="main_menu_time"></span></div><div class="main_menu_ver" style="display: none;">2.0 ()</div><div class="mm_menu_hor"><div class="menu_hor_cell"><div class="menu_hor_cell_img"><img src="template/default/i_720/mm_ico_mb.png"></div><span>Navegador de medios</span></div><div class="menu_hor_cell_act"><div class="menu_hor_cell_img"><img src="template/default/i_720/mm_ico_tv.png"></div><span>TV</span></div><div class="menu_hor_cell"><div class="menu_hor_cell_img"><img src="template/default/i_720/mm_ico_youtube.png"></div><span>YouTube</span></div></div><div class="mm_hor_left"></div><div class="mm_hor_right"></div><div class="mm_menu_vert_empty" style="display: none;"></div><div class="mm_menu_vert" style="display: block;"><div class="mm_menu_vert_body"><div class="mm_vert_container" style="display: none;"></div><div class="mm_vert_container" style="display: block;"><div>OTROS</div><div>VIP</div><div class="active">Todos</div><div>INFANTILES</div><div>CINE Y SERIES</div><div>MUSICA</div></div><div class="mm_vert_container" style="display: none;"></div><div class="mm_vert_container" style="display: none;"></div><div class="mm_vert_container" style="display: none;"></div></div><div class="mm_menu_vert_bottom"></div></div><div class="curweather_block"><div class="curweather_img"><img src="template/default/i_720/_0_sun.png"></div><div class="city">null</div><div class="curweather_descr">22° C<br>Claro<br><span class="curweather_title">Comodidad:</span> 22° C<br><span class="curweather_title">Presión:</span> 0 mm Hg<br><div class="curweather_wind"><div class="curweather_title" style="float: left">Viento:</div><div class="wind_direction_S">↑</div> <div style="float: left;"> 2 Sra</div></div><br><span class="curweather_title">Humedad:</span> 31%<br></div></div></div><div class="modal_form" style="display: none;"><div class="title">Confirmar</div><div class="status"></div><div class="text" style="text-align: center;">¿Realmente desea salir?</div><div></div><div class="buttons"><input type="button" value="CANCELAR"><input type="button" value="SÍ"></div></div><div class="modal_form" style="display: none;"><div class="title">Control de acceso</div><div class="status"></div><div><div class="item"><div class="label">Contraseña</div><input type="password" value="" placeholder=""></div></div><div class="buttons"><input type="button" value="DE ACUERDO"><input type="button" value="CANCELAR"></div></div><div class="mb_info" style="display: none;"><div class="alert_outer"><div class="alert_container"><table><tr><td class="mb_info_lt_head"></td><td class="mb_info_top_head"></td><td class="mb_info_rt_head"></td></tr><tr><td class="mb_info_lb"></td><td class="mb_info_main"><div class="ico_alert"></div><span></span></td><td class="mb_info_rb"></td></tr></table></div></div></div><div class="mb_info" style="display: none;"><div class="alert_outer"><div class="info_container"><table><tr><td class="mb_info_lt_head"></td><td class="mb_info_top_head"></td><td class="mb_info_rt_head"></td></tr><tr><td class="mb_info_lb"></td><td class="mb_info_main"><div class="ico_info"></div><span></span></td><td class="mb_info_rb"></td></tr></table></div></div></div><div class="mb_info" style="display: none;"><div class="alert_outer"><div class="confirm_container"><table><tr><td class="mb_info_lt_head"></td><td class="mb_info_top_head"></td><td class="mb_info_rt_head"></td></tr><tr><td class="mb_info_lb"></td><td class="mb_info_main"><div class="ico_confirm"></div><span></span></td><td class="mb_info_rb"></td></tr></table></div></div></div><div class="image_viewer" id="image_viewer" style="display: none;"><div class="label" style="display: none;"></div></div><div class="modal_form" style="display: none;"><div class="title">¿Instalar la aplicación?</div><div class="status"></div><div></div><div class="buttons"><input type="button" value="DE ACUERDO"><input type="button" value="CANCELAR"></div></div><div class="layer_bg" id="tv" style="display: block;"><div class="main_logo" style="background: url(&quot;http://s.interlibre.net/stalker_portal/c/template/logo.png&quot;) no-repeat;"></div><div class="mb_header_info"></div><div class="mb_header_info">PÁGINA <span class="text20_white bold">1</span> DE <span class="text20_white bold">7</span>. ENCONTRÓ <span class="text20_white bold">97</span> ARCHIVOS.</div><div class="short_container"><div class="blue_row_bg"><div class="number_block" style="display: block;">1</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/63.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">La 1 HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:15 El tiempo</div></div><div class="blue_row_bg" style="top: 120px;"><div class="number_block" style="display: block;">2</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/64.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">La 2 HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:35 Saber y ganar</div></div><div class="blue_row_bg" style="top: 158px;"><div class="number_block" style="display: block;">3</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/65.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Antena 3 HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:03 Tu tiempo con Roberto Brasero</div></div><div class="blue_row_bg" style="top: 196px;"><div class="number_block" style="display: block;">4</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/66.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Cuatro HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:45 Mujeres y hombres y viceversa</div></div><div class="blue_row_bg" style="top: 235px;"><div class="number_block" style="display: block;">5</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/67.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Tele 5 HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:00 Sálvame limón</div></div><div class="blue_row_bg" style="top: 274px;"><div class="number_block" style="display: block;">6</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/68.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">laSexta HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:45 Zapeando</div></div><div class="blue_row_bg" style="top: 312px;"><div class="number_block" style="display: block;">8</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/69.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Neox</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:15 Friends</div></div><div class="blue_row_bg" style="top: 350px;"><div class="number_block" style="display: block;">9</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/70.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Nova</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:10 Marina</div></div><div class="blue_row_bg" style="top: 388px;"><div class="number_block" style="display: block;">10</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/71.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Divinity</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:00 Castle</div></div><div class="blue_row_bg" style="top: 426px;"><div class="number_block" style="display: block;">11</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/72.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">FDF</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:05 La que se avecina</div></div><div class="blue_row_bg" style="top: 465px;"><div class="number_block" style="display: block;">12</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/73.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Energy</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:30 Rex, un policía diferente</div></div><div class="blue_row_bg" style="top: 504px;"><div class="number_block" style="display: block;">13</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/74.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">CastillaLaMancha HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">[No hay información de canal]</div></div><div class="blue_row_bg" style="top: 542px;"><div class="number_block" style="display: block;">15</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/77.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">Telemadrid</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">15:45 Apache</div></div><div class="blue_row_bg" style="top: 580px;"><div class="number_block" style="display: block;">18</div><div class="logo_block" style="display: block;"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/211.png"></div><div class="now_playing_block" style="display: none;"></div><div class="fav_block" style="display: none;"></div><div class="lock_block" style="display: none;"></div><div class="scrambled_block" style="display: none;"></div><div class="archive_block" style="display: none;"></div><div class="pvr_block" style="display: none;"></div><div class="local_time_shift_block" style="display: none;"></div><div class="name_block" style="display: block;">BeMad tv HD</div><div class="quality_high_block" style="display: none;"></div><div class="quality_medium_block" style="display: none;"></div><div class="quality_low_block" style="display: none;"></div><div class="cur_playing_block" style="display: block;">16:00 Callejeros Viajeros</div></div><div class="active_row_bg" style="display: block; top: 81px;"><div class="active_number_block">1</div><div class="active_logo_block"><img src="http://s.interlibre.net//stalker_portal/misc/logos/120/63.png"></div><div class="active_now_playing_block" style="display: none;"></div><div class="active_fav_block" style="display: none;"></div><div class="active_lock_block" style="display: none;"></div><div class="active_scrambled_block" style="display: none;"></div><div class="active_archive_block" style="display: none;"></div><div class="active_pvr_block" style="display: none;"></div><div class="active_local_time_shift_block" style="display: none;"></div><div class="active_name_block">La 1 HD</div><div class="active_quality_high_block" style="display: none;"></div><div class="active_quality_medium_block" style="display: none;"></div><div class="active_quality_low_block" style="display: none;"></div><div class="active_cur_playing_block">16:15 El tiempo</div></div><div style="display: block;"><div class="tv_timetable epg_mask"><div class="mark_memo" style="display:none"></div><div class="dummy_mark_memo" style="display:block"></div><span class="time">16:15 - </span><span class="current">El tiempo</span><br><div class="mark_memo" style="display:none"></div><div class="dummy_mark_memo" style="display:block"></div><span class="time">16:25 - </span><span class="">Servir y proteger</span><br><div class="mark_memo" style="display:none"></div><div class="dummy_mark_memo" style="display:block"></div><span class="time">17:20 - </span><span class="">Acacias 38</span><br><div class="mark_memo" style="display:none"></div><div class="dummy_mark_memo" style="display:block"></div><span class="time">18:15 - </span><span class="">Centro médico</span><br><div class="mark_memo" style="display:none"></div><div class="dummy_mark_memo" style="display:block"></div><span class="time">19:25 - </span><span class="">España directo</span><br></div><div class="tv_prev_window"><div class="tv_prev_msg"></div></div><div class="tv_clock">16:19</div></div></div><div class="ears_left_container"><div class="ears_left"><div class="ears_arrow_left top_arrow"></div><div><br>A<br>T<br>R<br>A<br>S<br></div><div class="ears_arrow_left bottom_arrow"></div></div></div><div class="ears_right_container"><div class="ears_right"><div class="ears_arrow_right top_arrow"></div><div><br>P<br>R<br>O<br>G<br>R<br>A<br>M<br>A<br>C<br>I<br>Ó<br>N<br></div><div class="ears_arrow_right bottom_arrow"></div></div></div><div class="color_button_bar"><table><tr><td><div class="btn_red"></div><span>VER</span></td><td><div class="separator"></div><div class="btn_green"></div><span>ORDENAR</span></td><td><div class="separator"></div><div class="btn_yellow"></div><span>FAVORITO</span></td><td><div class="separator"></div><div class="btn_blue"></div><span class="disable_color_btn_text">MOVER</span></td></tr></table></div><div class="bottom_menu" style="left: 217px; display: none; top: 0px;"><div class="bottom_menu_corners"></div><ul class="bottom_menu_container"><li class="bottom_menu_active_row"><div style="float: left;">por número</div></li><li><div style="float: left;">por titulo</div></li><li><div style="float: left;">único favorito</div></li></ul></div><div class="bottom_menu" style="left: 27px; display: none; top: 720px;"><div class="bottom_menu_corners"></div><ul class="bottom_menu_container"><li class="bottom_menu_active_row"><div style="float: left;">Lista + info</div></li><li><div style="float: left;">lista</div></li></ul></div><div class="bottom_menu" style="left: 190px; display: none; top: 720px;"><div class="bottom_menu_corners"></div><ul class="bottom_menu_container"><li class="bottom_menu_active_row"><div style="float: left;">MOVER</div></li><li><div style="float: left;">Añadir/del</div></li></ul></div><div class="mb_header_first">TV / <span><span>Todos /</span><span>por número /</span></span></div></div><div class="password" style="display: none;"><div class="password_continer"><div class="password_error_ico" style="display: none;"></div><div class="password_input"></div></div></div><div class="modal_form" style="display: none;"><div class="title">Control de Padres</div><div class="status"></div><div><div class="item"><div class="label">Contraseña</div><input type="password" value="" placeholder=""></div></div><div class="buttons"><input type="button" value="DE ACUERDO"><input type="button" value="CANCELAR"></div></div><div class="quick_ch_switch tv_preview_quick_ch_switch" style="display: none;"><div class="quick_ch_input"></div></div><div class="layer_bg" id="epg" style="display: none;"><div class="main_logo" style="background: url(&quot;http://s.interlibre.net/stalker_portal/c/template/logo.png&quot;) no-repeat;"></div><div class="wide_container"><div class="blue_row_bg" active=""><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 136px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 182px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 226px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 272px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 316px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 362px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 406px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 452px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 496px;"><div class="number_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="epg_container_block" style="display: none;"></div></div><div class="active_row_bg" style="display: none;"><div class="active_number_block"></div><div class="active_name_block"></div><div class="active_epg_container_block"></div></div></div><div class="program_info"></div><div class="on_date"></div><div class="time_mark mark-1"></div><div class="time_mark mark-2"></div><div class="time_mark mark-3"></div><div class="time_mark mark-4"></div><div class="live_line_container"><div class="live_line" style="display: none;"></div></div><div class="mb_header_first">Programación / <span></span></div><div class="color_button_bar"><table><tr><td><div class="btn_red"></div><span>GRABAR</span></td><td><div class="separator"></div><div class="btn_green"></div><span>RECORDAR</span></td><td><div class="separator"></div><div class="btn_yellow"></div><span class="disable_color_btn_text">DESCARGAR</span></td><td><div class="separator"></div><div class="btn_blue"></div><span class="disable_color_btn_text">VACÍO</span></td></tr></table></div></div><div class="layer_bg" id="epg_simple" style="display: none;"><div class="main_logo" style="background: url(&quot;http://s.interlibre.net/stalker_portal/c/template/logo.png&quot;) no-repeat;"></div><div class="wide_container" style="display: block;"><div class="blue_row_bg" active=""><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 136px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 182px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 226px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 272px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 316px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 362px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 406px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 452px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div><div class="blue_row_bg" style="top: 496px;"><div class="t_time_block" style="display: none;"></div><div class="name_block" style="display: none;"></div><div class="mark_memo_block" style="display: none;"></div><div class="mark_rec_block" style="display: none;"></div><div class="mark_archive_block" style="display: none;"></div></div></div><ul class="week" style="display: block;"><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ul><div class="program_info" style="display: block;"></div><div class="full_program_info" style="display: none;"><div class="full_program_info_content"></div><div class="mb_scroll"><div class="mb_scroll_t" style="height: 492px;"><div class="mb_scroll_c" style="top: 6px;"></div></div><div class="mb_scroll_b"></div></div></div><div class="mb_header_first">Programación / <span></span></div><div class="ears_left_container"><div class="ears_left"><div class="ears_arrow_left top_arrow"></div><div><br>A<br>T<br>R<br>A<br>S<br></div><div class="ears_arrow_left bottom_arrow"></div></div></div><div class="color_button_bar"><table><tr><td><div class="btn_red"></div><span>GRABAR</span></td><td><div class="separator"></div><div class="btn_green"></div><span>RECORDAR</span></td><td><div class="separator"></div><div class="btn_yellow"></div><span class="disable_color_btn_text">DESCARGAR</span></td><td><div class="separator"></div><div class="btn_blue"></div><span>MÁS</span></td></tr></table></div></div><div class="modal_form" style="display: none;"><div class="title">¿Instalar la aplicación?</div><div class="status"></div><div></div><div class="buttons"><input type="button" value="DE ACUERDO"><input type="button" value="CANCELAR"></div></div><div class="duration_box" style="display: none;"><div class="duration_box_input"></div><div class="duration_box_title">duración de la grabación</div></div><div class="modal_form" style="display: none;"><div class="title">Confirmar</div><div class="status"></div><div class="text" style="text-align: center;">¿De verdad quiere dejar de este disco?</div><div></div><div class="buttons"><input type="button" value="CANCELAR"><input type="button" value="SÍ"></div></div><div class="layer_bg" id="weather_forecast" style="display: none;"><div class="main_logo" style="background: url(&quot;http://s.interlibre.net/stalker_portal/c/template/logo.png&quot;) no-repeat;"></div><div class="weather_forecast"><div class="weather_row_1 weather_col_1"><div class="day_weather_text"></div><div class="day_weather_descr"></div><div class="day_weather_layer_1"><img></div><div class="day_weather_temp"></div></div><div class="weather_row_1 weather_col_2"><div class="day_weather_text"></div><div class="day_weather_descr"></div><div class="day_weather_layer_1"><img></div><div class="day_weather_temp"></div></div><div class="weather_row_1 weather_col_3"><div class="day_weather_text"></div><div class="day_weather_descr"></div><div class="day_weather_layer_1"><img></div><div class="day_weather_temp"></div></div><div class="weather_row_1 weather_col_4"><div class="day_weather_text"></div><div class="day_weather_descr"></div><div class="day_weather_layer_1"><img></div><div class="day_weather_temp"></div></div></div><div class="ears_left_container"><div class="ears_left"><div class="ears_arrow_left top_arrow"></div><div><br>A<br>T<br>R<br>A<br>S<br></div><div class="ears_arrow_left bottom_arrow"></div></div></div><div class="mb_header_first">CLIMA / <span></span></div></div><div class="context_menu_container" style="display: none;"><div class="con_menu_main_active"><table><tr><td class="v_menu1_top_l"></td><td class="v_menu1_top_r"></td></tr><tr><td><table class="con_menu_container"><tr><td class="active"><span>Quejar</span></td></tr><tr><td><span>Reloj</span></td></tr></table></td><td class="v_menu1_center_r">&nbsp;</td></tr><tr><td class="v_menu1_bottom_l"></td><td class="v_menu1_bottom_r"></td></tr></table></div><div class="sub_con_menu" style="top: -5px;"><table><tr><td class="v_menu2_top_l"></td><td class="v_menu2_top_r"></td></tr><tr><td class="v_menu2_center_l">&nbsp;</td><td><table class="sub_menu_container"><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>en el sonido</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>en video</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>sin EPG</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>EPG mal</span></td></tr></table></td></tr><tr><td class="v_menu2_bottom_l"></td><td class="v_menu2_bottom_r"></td></tr></table></div><div class="sub_con_menu" style="display: none; top: 25px;"><table><tr><td class="v_menu2_top_l"></td><td class="v_menu2_top_r"></td></tr><tr><td class="v_menu2_center_l">&nbsp;</td><td><table class="sub_menu_container"><tr><td><div class="space" style="display: none;">&nbsp;</div><div class="bull" style="display: block;">•</div><span>Oculto</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>Parte superior derecha</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>Arriba a la izquierda</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>Abajo a la derecha</span></td></tr><tr><td><div class="space">&nbsp;</div><div class="bull" style="display: none;">•</div><span>abajo a la izquierda</span></td></tr></table></td></tr><tr><td class="v_menu2_bottom_l"></td><td class="v_menu2_bottom_r"></td></tr></table></div></div></body></html>
